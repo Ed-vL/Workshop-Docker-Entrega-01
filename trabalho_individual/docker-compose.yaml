@@ -1,0 +1,103 @@
+version: '3'
+
+services:
+  users-service-db:
+    image: mysql:5.7.20
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "db"
+    ports:
+      - "7201:3306"
+    volumes:
+      - ./db_userdata:/var/lib/mysql
+    networks:
+      - app-network
+
+  chat-service-db:
+    image: mysql:5.7.20
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "db"
+    ports:
+      - "7200:3306"
+    volumes:
+      - ./db_chatdata:/var/lib/mysql
+    networks:
+      - app-network
+
+  chatservice:
+    container_name: chat-service
+    build:
+        context: ./chat-service
+        dockerfile: Dockerfile
+    ports:
+        - "7100:7100"
+    depends_on:
+        - chat-service-db
+    networks:
+      - app-network
+
+  userservice:
+    container_name: users-service
+    build:
+        context: ./users-service
+        dockerfile: Dockerfile
+    ports:
+        - "7101:7101"
+    depends_on:
+        - users-service-db
+    networks:
+      - app-network
+
+  chatapp:
+    container_name: chat-app
+    build:
+        context: ./chat-app
+        dockerfile: Dockerfile
+    ports:
+        - "7001:7001"
+    networks:
+      - app-network
+
+  chatservice:
+    container_name: chat-service
+    build:
+        context: ./chat-service
+        dockerfile: Dockerfile
+    ports:
+        - "7100:7100"
+    networks:
+      - app-network
+
+  apigateway:
+    container_name: api-gateway
+    build:
+        context: ./api-gateway
+        dockerfile: Dockerfile
+    ports:
+        - "7000:7000"
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin
+    ports:
+        - "7300:80"
+    environment:
+      - PMA_ARBITRARY=1
+    volumes:
+      - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
+    networks:
+      - app-network
+    depends_on:
+      - chat-service-db
+      - users-service-db
+
+        
+networks: 
+    app-network:
+        driver: bridge
+
+volumes:
+  db_userdata:
+  db_chatdata:  
